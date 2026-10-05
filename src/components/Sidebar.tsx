@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   ArrowRight,
   ExternalLink,
+  Github,
 } from 'lucide-react';
 import { ProjectFile, EditorSettings, ReviewResult } from '../types';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
@@ -34,6 +35,8 @@ interface SidebarProps {
   onTriggerLocalSecurityScan: () => void;
   onOpenLocalSecurityModal: () => void;
   onJumpToLine?: (line: number) => void;
+  currentView?: 'editor' | 'github';
+  onViewChange?: (view: 'editor' | 'github') => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -50,6 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTriggerLocalSecurityScan,
   onOpenLocalSecurityModal,
   onJumpToLine,
+  currentView = 'editor',
+  onViewChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'files' | 'review' | 'security' | 'settings'>('files');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -61,7 +66,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={() => {
-              if (activeTab === 'files' && !isCollapsed) {
+              onViewChange?.('editor');
+              if (activeTab === 'files' && !isCollapsed && currentView === 'editor') {
                 setIsCollapsed(true);
               } else {
                 setActiveTab('files');
@@ -70,20 +76,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="Explorer (Files)"
             className={`p-2.5 rounded-lg transition-colors cursor-pointer relative ${
-              activeTab === 'files' && !isCollapsed
+              activeTab === 'files' && !isCollapsed && currentView === 'editor'
                 ? 'bg-indigo-600/20 text-cyan-400 border border-indigo-500/30'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
             }`}
           >
             <Files className="w-5 h-5" />
-            {activeTab === 'files' && !isCollapsed && (
+            {activeTab === 'files' && !isCollapsed && currentView === 'editor' && (
               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-cyan-400 rounded-r" />
             )}
           </button>
 
           <button
             onClick={() => {
-              if (activeTab === 'review' && !isCollapsed) {
+              onViewChange?.('editor');
+              if (activeTab === 'review' && !isCollapsed && currentView === 'editor') {
                 setIsCollapsed(true);
               } else {
                 setActiveTab('review');
@@ -92,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="AI Code Review"
             className={`p-2.5 rounded-lg transition-colors cursor-pointer relative ${
-              activeTab === 'review' && !isCollapsed
+              activeTab === 'review' && !isCollapsed && currentView === 'editor'
                 ? 'bg-indigo-600/20 text-cyan-400 border border-indigo-500/30'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
             }`}
@@ -105,7 +112,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={() => {
-              if (activeTab === 'security' && !isCollapsed) {
+              onViewChange?.('editor');
+              if (activeTab === 'security' && !isCollapsed && currentView === 'editor') {
                 setIsCollapsed(true);
               } else {
                 setActiveTab('security');
@@ -114,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="Local Security Analysis (Offline)"
             className={`p-2.5 rounded-lg transition-colors cursor-pointer relative ${
-              activeTab === 'security' && !isCollapsed
+              activeTab === 'security' && !isCollapsed && currentView === 'editor'
                 ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
             }`}
@@ -124,12 +132,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
             )}
           </button>
+
+          {/* GitHub Integration Navigation Item */}
+          <button
+            onClick={() => {
+              onViewChange?.('github');
+            }}
+            title="GitHub Integration & PR Reviews"
+            className={`p-2.5 rounded-lg transition-colors cursor-pointer relative ${
+              currentView === 'github'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-600/10'
+                : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
+            }`}
+          >
+            <Github className="w-5 h-5" />
+            {currentView === 'github' && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-purple-400 rounded-r" />
+            )}
+          </button>
         </div>
 
         <div>
           <button
             onClick={() => {
-              if (activeTab === 'settings' && !isCollapsed) {
+              onViewChange?.('editor');
+              if (activeTab === 'settings' && !isCollapsed && currentView === 'editor') {
                 setIsCollapsed(true);
               } else {
                 setActiveTab('settings');
@@ -138,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="Editor Settings"
             className={`p-2.5 rounded-lg transition-colors cursor-pointer ${
-              activeTab === 'settings' && !isCollapsed
+              activeTab === 'settings' && !isCollapsed && currentView === 'editor'
                 ? 'bg-indigo-600/20 text-cyan-400 border border-indigo-500/30'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
             }`}

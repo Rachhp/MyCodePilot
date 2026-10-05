@@ -13,6 +13,7 @@ import {
   Check,
   ShieldAlert,
   WifiOff,
+  Laptop,
 } from 'lucide-react';
 import { SupportedLanguage, AiUsageData } from '../types';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
@@ -25,6 +26,7 @@ interface TopBarProps {
   onFix: () => void;
   onResetCode: () => void;
   onOpenLocalSecurity?: () => void;
+  onOpenVsCodeModal?: () => void;
   localSecurityScore?: number;
   usageData: AiUsageData | null;
   isAiLoading: boolean;
@@ -41,6 +43,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onFix,
   onResetCode,
   onOpenLocalSecurity,
+  onOpenVsCodeModal,
   localSecurityScore,
   usageData,
   isAiLoading,
@@ -224,6 +227,18 @@ export const TopBar: React.FC<TopBarProps> = ({
           </span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
         </button>
+
+        {/* VS Code Extension Button */}
+        {onOpenVsCodeModal && (
+          <button
+            onClick={onOpenVsCodeModal}
+            title="Download CodePilot VS Code Extension (.vsix)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-blue-950/40 hover:bg-blue-900/50 text-blue-200 border border-blue-800/60 hover:border-blue-700 text-xs font-medium transition-colors cursor-pointer"
+          >
+            <Laptop className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">VS Code</span>
+          </button>
+        )}
 
         {/* Chat Toggle Button */}
         <button

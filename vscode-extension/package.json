@@ -1,0 +1,176 @@
+{
+  "name": "codepilot",
+  "displayName": "CodePilot AI Assistant & Local Security",
+  "description": "AI-powered code reviews, explanations, diff fixes, and 100% offline local security scanner for VS Code.",
+  "version": "1.0.0",
+  "publisher": "codepilot",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Security",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "copilot",
+    "gemini",
+    "code review",
+    "security",
+    "offline scanner",
+    "diff"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codepilot/vscode-extension"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "codepilot.explainSelectedCode",
+        "title": "CodePilot: Explain Selected Code",
+        "category": "CodePilot"
+      },
+      {
+        "command": "codepilot.fixSelectedCode",
+        "title": "CodePilot: Fix Selected Code",
+        "category": "CodePilot"
+      },
+      {
+        "command": "codepilot.reviewSelectedCode",
+        "title": "CodePilot: Review Selected Code",
+        "category": "CodePilot"
+      },
+      {
+        "command": "codepilot.reviewCurrentFile",
+        "title": "CodePilot: Review Current File",
+        "category": "CodePilot"
+      },
+      {
+        "command": "codepilot.securityScan",
+        "title": "CodePilot: Security Scan",
+        "category": "CodePilot"
+      },
+      {
+        "command": "codepilot.openChat",
+        "title": "CodePilot: Open CodePilot Chat",
+        "category": "CodePilot"
+      },
+      {
+        "command": "codepilot.setAuthToken",
+        "title": "CodePilot: Set Backend Auth Token",
+        "category": "CodePilot"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "codepilot.explainSelectedCode",
+        "key": "ctrl+alt+e",
+        "mac": "cmd+alt+e",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "codepilot.fixSelectedCode",
+        "key": "ctrl+alt+f",
+        "mac": "cmd+alt+f",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "codepilot.reviewSelectedCode",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "codepilot.securityScan",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      },
+      {
+        "command": "codepilot.openChat",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "codepilot.explainSelectedCode",
+          "when": "editorHasSelection",
+          "group": "codepilot@1"
+        },
+        {
+          "command": "codepilot.fixSelectedCode",
+          "when": "editorHasSelection",
+          "group": "codepilot@2"
+        },
+        {
+          "command": "codepilot.reviewSelectedCode",
+          "when": "editorHasSelection",
+          "group": "codepilot@3"
+        },
+        {
+          "command": "codepilot.securityScan",
+          "group": "codepilot@4"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codepilot-activitybar",
+          "title": "CodePilot",
+          "icon": "$(sparkle)"
+        }
+      ]
+    },
+    "views": {
+      "codepilot-activitybar": [
+        {
+          "type": "webview",
+          "id": "codepilot.chatView",
+          "name": "CodePilot Assistant",
+          "icon": "$(sparkle)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CodePilot",
+      "properties": {
+        "codepilot.backendUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "Base URL of the CodePilot backend service (e.g. http://localhost:3000 or production deployment URL)."
+        },
+        "codepilot.enableInlineDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show code review and local security scan findings as VS Code editor problems/diagnostics."
+        },
+        "codepilot.autoScanOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically run the offline local security scanner whenever a file is saved."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}

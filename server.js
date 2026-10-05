@@ -10,6 +10,24 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3e3;
 app.use(express.json({ limit: "5mb" }));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  const expectedToken = process.env.CODEPILOT_AUTH_TOKEN;
+  if (expectedToken && req.path.startsWith("/api/ai/")) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
+      return res.status(401).json({
+        error: "Unauthorized: Invalid or missing CodePilot Auth Token."
+      });
+    }
+  }
+  next();
+});
 const usageTracker = {
   requestCount: 0,
   estimatedTokens: 0,
@@ -59,7 +77,25 @@ async function generateWithFallback(ai, params) {
   }
   throw lastError;
 }
-app.get("/api/usage", (req, res) => {
+app.get("/api/ai/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "CodePilot AI API",
+    version: "1.0.0",
+    hasApiKey: Boolean(process.env.GEMINI_API_KEY)
+  });
+});
+app.get("/api/vscode/download", (req, res) => {
+  const vsixPath = path.resolve(__dirname, "vscode-extension", "codepilot-1.0.0.vsix");
+  res.download(vsixPath, "codepilot-1.0.0.vsix", (err) => {
+    if (err) {
+      res.status(404).json({
+        error: "VSIX package not found. Run npm run package:vscode to build it."
+      });
+    }
+  });
+});
+app.get(["/api/usage", "/api/ai/usage"], (req, res) => {
   res.json({
     requestCount: usageTracker.requestCount,
     estimatedTokens: usageTracker.estimatedTokens,
@@ -67,7 +103,7 @@ app.get("/api/usage", (req, res) => {
     hasApiKey: Boolean(process.env.GEMINI_API_KEY)
   });
 });
-app.post("/api/chat", async (req, res) => {
+app.post(["/api/chat", "/api/ai/chat"], async (req, res) => {
   try {
     const { messages, codeContext, language, selectedCode } = req.body;
     const ai = getAiClient();
@@ -125,7 +161,7 @@ Assistant:`;
     });
   }
 });
-app.post("/api/review", async (req, res) => {
+app.post(["/api/review", "/api/ai/review"], async (req, res) => {
   try {
     const { code, language, selectedCode } = req.body;
     const ai = getAiClient();
@@ -228,7 +264,7 @@ ${codeToReview.slice(0, 25e3)}
     });
   }
 });
-app.post("/api/explain", async (req, res) => {
+app.post(["/api/explain", "/api/ai/explain"], async (req, res) => {
   try {
     const { code, language, selectedCode } = req.body;
     const ai = getAiClient();
@@ -330,7 +366,7 @@ ${targetCode.slice(0, 25e3)}
     });
   }
 });
-app.post("/api/fix", async (req, res) => {
+app.post(["/api/fix", "/api/ai/fix"], async (req, res) => {
   try {
     const { code, language, selectedCode, instruction } = req.body;
     const ai = getAiClient();

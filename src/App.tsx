@@ -12,6 +12,8 @@ import { ReviewModal } from './components/ReviewModal';
 import { ExplainModal } from './components/ExplainModal';
 import { FixModal } from './components/FixModal';
 import { LocalSecurityModal } from './components/LocalSecurityModal';
+import { VsCodeModal } from './components/VsCodeModal';
+import { GitHubView } from './components/github/GitHubView';
 import {
   ProjectFile,
   SupportedLanguage,
@@ -76,6 +78,9 @@ export default function App() {
   // Local Security Analysis (100% Offline, Zero Telemetry)
   const [localSecurityReport, setLocalSecurityReport] = useState<LocalSecurityReport | null>(null);
   const [isLocalSecurityOpen, setIsLocalSecurityOpen] = useState(false);
+
+  // VS Code Extension Modal
+  const [isVsCodeOpen, setIsVsCodeOpen] = useState(false);
 
   // Run 100% offline local security scan
   const runLocalScan = (codeToScan: string, lang: string, notifyUser = false) => {
@@ -450,6 +455,7 @@ export default function App() {
           runLocalScan(activeFile.content, activeFile.language, true);
           setIsLocalSecurityOpen(true);
         }}
+        onOpenVsCodeModal={() => setIsVsCodeOpen(true)}
         localSecurityScore={localSecurityReport?.overallScore}
         usageData={usageData}
         isAiLoading={isAiLoading}
@@ -558,6 +564,12 @@ export default function App() {
         language={activeFile.language}
         onJumpToLine={(line) => setHighlightedLine(line)}
         onApplyLocalFix={handleApplyLocalFix}
+      />
+
+      {/* VS Code Extension Modal */}
+      <VsCodeModal
+        isOpen={isVsCodeOpen}
+        onClose={() => setIsVsCodeOpen(false)}
       />
 
       {/* Toast Alert Banner */}
