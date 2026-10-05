@@ -1,0 +1,6 @@
+{
+  "name": "CodePilot",
+  "description": "Modern AI coding assistant developer tool with real-time code editor, AI chat, intelligent code review, explanation, and automated fixes powered by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
