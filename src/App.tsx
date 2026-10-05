@@ -11,6 +11,7 @@ import { AiChat } from './components/AiChat';
 import { ReviewModal } from './components/ReviewModal';
 import { ExplainModal } from './components/ExplainModal';
 import { FixModal } from './components/FixModal';
+import { LocalSecurityModal } from './components/LocalSecurityModal';
 import {
   ProjectFile,
   SupportedLanguage,
@@ -22,6 +23,7 @@ import {
   AiUsageData,
 } from './types';
 import { SUPPORTED_LANGUAGES } from './data/languages';
+import { scanCodeLocally, LocalSecurityReport } from './utils/localSecurityScanner';
 import { CheckCircle2, AlertTriangle, X } from 'lucide-react';
 
 export default function App() {
@@ -70,6 +72,37 @@ export default function App() {
   // Fix state
   const [fixResult, setFixResult] = useState<FixResult | null>(null);
   const [isFixOpen, setIsFixOpen] = useState(false);
+
+  // Local Security Analysis (100% Offline, Zero Telemetry)
+  const [localSecurityReport, setLocalSecurityReport] = useState<LocalSecurityReport | null>(null);
+  const [isLocalSecurityOpen, setIsLocalSecurityOpen] = useState(false);
+
+  // Run 100% offline local security scan
+  const runLocalScan = (codeToScan: string, lang: string, notifyUser = false) => {
+    const report = scanCodeLocally(codeToScan, lang);
+    setLocalSecurityReport(report);
+
+    if (notifyUser) {
+      if (report.issues.length === 0) {
+        showToast('success', 'Local Analysis: 0 security flaws or secrets detected (100% offline).');
+      } else {
+        showToast(
+          'info',
+          `Local Analysis: Found ${report.issues.length} issue${
+            report.issues.length > 1 ? 's' : ''
+          } (${report.stats.secretsFound} secrets). Runs 100% in-browser.`
+        );
+      }
+    }
+    return report;
+  };
+
+  // Run local scan when active file or content changes
+  useEffect(() => {
+    if (activeFile?.content) {
+      runLocalScan(activeFile.content, activeFile.language, false);
+    }
+  }, [activeFileId, activeFile?.language]);
 
   // Usage telemetry
   const [usageData, setUsageData] = useState<AiUsageData | null>(null);
@@ -297,6 +330,21 @@ export default function App() {
     showToast('success', 'Applied fix to editor.');
   };
 
+  // Apply Local Security remediation to line
+  const handleApplyLocalFix = (lineNumber: number, safeSnippet: string) => {
+    if (lineNumber > 0) {
+      const lines = activeFile.content.split('\n');
+      if (lineNumber <= lines.length) {
+        lines[lineNumber - 1] = safeSnippet;
+        const updated = lines.join('\n');
+        handleContentChange(updated);
+        runLocalScan(updated, activeFile.language, false);
+        showToast('success', `Applied local security remediation at Line ${lineNumber}.`);
+        return;
+      }
+    }
+  };
+
   // AI Chat message sender
   const handleSendChatMessage = async (userPrompt: string, actionType?: string) => {
     const userMessage: ChatMessage = {
@@ -398,6 +446,11 @@ export default function App() {
         onExplain={handleExplainCode}
         onFix={() => handleFixCode()}
         onResetCode={handleResetCode}
+        onOpenLocalSecurity={() => {
+          runLocalScan(activeFile.content, activeFile.language, true);
+          setIsLocalSecurityOpen(true);
+        }}
+        localSecurityScore={localSecurityReport?.overallScore}
         usageData={usageData}
         isAiLoading={isAiLoading}
         activeAction={activeAction}
@@ -423,7 +476,10 @@ export default function App() {
           onTriggerReview={handleReviewCode}
           settings={settings}
           onUpdateSettings={(newVals) => setSettings((s) => ({ ...s, ...newVals }))}
-          onTriggerSecurityScan={handleReviewCode}
+          localSecurityReport={localSecurityReport}
+          onTriggerLocalSecurityScan={() => runLocalScan(activeFile.content, activeFile.language, true)}
+          onOpenLocalSecurityModal={() => setIsLocalSecurityOpen(true)}
+          onJumpToLine={(line) => setHighlightedLine(line)}
         />
 
         {/* Center: Professional Code Editor */}
@@ -492,6 +548,16 @@ export default function App() {
         language={activeFile.language}
         onApplyFix={handleApplyFix}
         onRefineFix={(instruction) => handleFixCode(instruction)}
+      />
+
+      {/* Local Security Analysis Modal (100% Offline) */}
+      <LocalSecurityModal
+        isOpen={isLocalSecurityOpen}
+        onClose={() => setIsLocalSecurityOpen(false)}
+        report={localSecurityReport}
+        language={activeFile.language}
+        onJumpToLine={(line) => setHighlightedLine(line)}
+        onApplyLocalFix={handleApplyLocalFix}
       />
 
       {/* Toast Alert Banner */}

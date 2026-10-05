@@ -6,18 +6,19 @@ import {
   Settings,
   Plus,
   Trash2,
-  AlertCircle,
   Lock,
-  Flame,
   CheckCircle2,
-  Bug,
   Sliders,
-  ChevronRight,
-  Code2,
   ShieldAlert,
+  WifiOff,
+  KeyRound,
+  AlertTriangle,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
-import { ProjectFile, SupportedLanguage, EditorSettings, ReviewResult } from '../types';
+import { ProjectFile, EditorSettings, ReviewResult } from '../types';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
+import { LocalSecurityReport } from '../utils/localSecurityScanner';
 
 interface SidebarProps {
   files: ProjectFile[];
@@ -29,7 +30,10 @@ interface SidebarProps {
   onTriggerReview: () => void;
   settings: EditorSettings;
   onUpdateSettings: (newSettings: Partial<EditorSettings>) => void;
-  onTriggerSecurityScan: () => void;
+  localSecurityReport: LocalSecurityReport | null;
+  onTriggerLocalSecurityScan: () => void;
+  onOpenLocalSecurityModal: () => void;
+  onJumpToLine?: (line: number) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,7 +46,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTriggerReview,
   settings,
   onUpdateSettings,
-  onTriggerSecurityScan,
+  localSecurityReport,
+  onTriggerLocalSecurityScan,
+  onOpenLocalSecurityModal,
+  onJumpToLine,
 }) => {
   const [activeTab, setActiveTab] = useState<'files' | 'review' | 'security' | 'settings'>('files');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -83,14 +90,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setIsCollapsed(false);
               }
             }}
-            title="Code Review Results"
+            title="AI Code Review"
             className={`p-2.5 rounded-lg transition-colors cursor-pointer relative ${
               activeTab === 'review' && !isCollapsed
                 ? 'bg-indigo-600/20 text-cyan-400 border border-indigo-500/30'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
             }`}
           >
-            <ShieldAlert className="w-5 h-5" />
+            <ShieldCheck className="w-5 h-5" />
             {reviewResult && (
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400" />
             )}
@@ -105,14 +112,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setIsCollapsed(false);
               }
             }}
-            title="Security & Vulnerability Hub"
+            title="Local Security Analysis (Offline)"
             className={`p-2.5 rounded-lg transition-colors cursor-pointer relative ${
               activeTab === 'security' && !isCollapsed
-                ? 'bg-indigo-600/20 text-cyan-400 border border-indigo-500/30'
+                ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-[#1a1b24]'
             }`}
           >
             <Lock className="w-5 h-5" />
+            {localSecurityReport && localSecurityReport.issues.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
           </button>
         </div>
 
@@ -140,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Expanded Sidebar Drawer */}
       {!isCollapsed && (
-        <div className="w-60 bg-[#14151a] flex flex-col justify-between overflow-hidden">
+        <div className="w-64 bg-[#14151a] flex flex-col justify-between overflow-hidden">
           {/* Top of Sidebar Pane */}
           <div className="flex-1 overflow-y-auto">
             {/* FILES VIEW */}
@@ -208,7 +218,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           if (existing) {
                             onSelectFile(existing.id);
                           } else {
-                            // Switch to this language
                             onSelectFile(files[0].id);
                           }
                         }}
@@ -228,7 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="p-3 space-y-4">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    Review Summary
+                    AI Review Summary
                   </span>
                 </div>
 
@@ -272,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={onTriggerReview}
                       className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition-colors cursor-pointer shadow-md"
                     >
-                      Re-run Code Review
+                      Re-run AI Review
                     </button>
                   </div>
                 ) : (
@@ -285,58 +294,198 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={onTriggerReview}
                       className="w-full py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 font-medium text-xs transition-colors cursor-pointer"
                     >
-                      Audit Code Now
+                      Audit Code with AI
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* SECURITY VIEW */}
+            {/* LOCAL SECURITY VIEW (100% Offline / Zero Telemetry) */}
             {activeTab === 'security' && (
-              <div className="p-3 space-y-3">
+              <div className="p-3 space-y-3.5">
+                {/* Header with clear offline label */}
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    Security Vulnerability Hub
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <WifiOff className="w-3.5 h-3.5" />
+                    <span>Local Analysis</span>
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">
+                    Offline
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#191a24] border border-[#272938] space-y-2 text-xs">
-                  <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                    <Lock className="w-4 h-4" />
-                    <span>Security Scanner</span>
+                {/* Privacy Badge */}
+                <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-[11px] text-emerald-200/90 leading-tight">
+                  <div className="flex items-center gap-1 font-semibold text-emerald-300 mb-0.5">
+                    <Lock className="w-3 h-3 text-emerald-400" />
+                    <span>Zero Data Sent</span>
                   </div>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
-                    Detects injection flaws (SQLi/XSS), buffer overflows, race conditions, memory leaks, and weak cryptography.
-                  </p>
-                  <button
-                    onClick={onTriggerSecurityScan}
-                    className="w-full py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/40 font-medium text-xs transition-colors cursor-pointer"
-                  >
-                    Scan For Vulnerabilities
-                  </button>
+                  <span>Scanned 100% in-browser. Source code is never sent to Gemini or any external server.</span>
                 </div>
 
-                <div className="space-y-1.5 pt-2">
+                {/* Score & Trigger Card */}
+                {localSecurityReport ? (
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-[#191a24] border border-[#272938] space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-zinc-400">Local Security Score:</span>
+                        <span
+                          className={`font-mono font-bold text-sm ${
+                            localSecurityReport.overallScore >= 80
+                              ? 'text-emerald-400'
+                              : localSecurityReport.overallScore >= 50
+                              ? 'text-amber-400'
+                              : 'text-rose-400'
+                          }`}
+                        >
+                          {localSecurityReport.overallScore} / 100
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                        <div
+                          className={`h-full ${
+                            localSecurityReport.overallScore >= 80
+                              ? 'bg-emerald-500'
+                              : localSecurityReport.overallScore >= 50
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${localSecurityReport.overallScore}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 rounded-lg bg-[#14151f] border border-zinc-800">
+                        <div className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <KeyRound className="w-3 h-3 text-amber-400" />
+                          <span>Secrets</span>
+                        </div>
+                        <div className="font-bold text-white text-sm font-mono mt-0.5">
+                          {localSecurityReport.stats.secretsFound}
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-[#14151f] border border-zinc-800">
+                        <div className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 text-rose-400" />
+                          <span>Critical/High</span>
+                        </div>
+                        <div className="font-bold text-rose-400 text-sm font-mono mt-0.5">
+                          {localSecurityReport.stats.criticalCount + localSecurityReport.stats.highCount}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Issues Preview */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] px-1 text-zinc-400">
+                        <span>Findings ({localSecurityReport.issues.length})</span>
+                        <button
+                          onClick={onOpenLocalSecurityModal}
+                          className="text-emerald-400 hover:text-emerald-300 font-medium cursor-pointer flex items-center gap-0.5"
+                        >
+                          <span>View Full</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                        {localSecurityReport.issues.length === 0 ? (
+                          <div className="p-2 text-center text-[11px] text-zinc-500 bg-[#121319] rounded-lg">
+                            ✓ No local security flaws detected
+                          </div>
+                        ) : (
+                          localSecurityReport.issues.slice(0, 5).map((iss, i) => (
+                            <div
+                              key={i}
+                              onClick={() => {
+                                if (onJumpToLine) onJumpToLine(iss.lineNumber);
+                              }}
+                              className="p-2 rounded-lg bg-[#181922] hover:bg-[#1e1f2b] border border-zinc-800/80 text-xs transition-colors cursor-pointer space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span
+                                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
+                                    iss.severity === 'Critical'
+                                      ? 'bg-rose-500/20 text-rose-400'
+                                      : iss.severity === 'High'
+                                      ? 'bg-orange-500/20 text-orange-400'
+                                      : 'bg-amber-500/20 text-amber-300'
+                                  }`}
+                                >
+                                  {iss.severity}
+                                </span>
+                                <span className="text-[10px] text-zinc-500 font-mono">
+                                  Line {iss.lineNumber}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-zinc-300 truncate font-medium">
+                                {iss.title}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Scan Action Buttons */}
+                    <div className="space-y-1.5 pt-1">
+                      <button
+                        onClick={onTriggerLocalSecurityScan}
+                        className="w-full py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <WifiOff className="w-3.5 h-3.5" />
+                        <span>Re-Scan Locally</span>
+                      </button>
+
+                      <button
+                        onClick={onOpenLocalSecurityModal}
+                        className="w-full py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-xs transition-colors cursor-pointer"
+                      >
+                        Open Full Audit Report
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 space-y-3 px-2">
+                    <Lock className="w-8 h-8 text-emerald-500/50 mx-auto" />
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Scan your file offline for secrets, injection flaws, XSS, and weak cryptography without internet.
+                    </p>
+                    <button
+                      onClick={onTriggerLocalSecurityScan}
+                      className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <WifiOff className="w-3.5 h-3.5" />
+                      <span>Run Local Security Scan</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Offline Rules Covered */}
+                <div className="space-y-1.5 pt-2 border-t border-[#22232c]">
                   <span className="text-[10px] font-semibold uppercase text-zinc-500 px-1">
-                    Coverage Checklist
+                    Local Rules Covered
                   </span>
                   <div className="text-[11px] space-y-1 text-zinc-400">
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>OWASP Top 10 Flaws</span>
+                      <span>AWS, GitHub & Stripe Secrets</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Memory Safety & Leaks</span>
+                      <span>SQL Injection & Eval Sinks</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Cryptographic Weaknesses</span>
+                      <span>XSS innerHTML Flaws</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Concurrent Race Hazards</span>
+                      <span>Weak Hashes (MD5/SHA1)</span>
                     </div>
                   </div>
                 </div>
@@ -401,8 +550,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 </div>
 
-                {/* Info about Gemini */}
+                {/* Info about Local vs Gemini */}
                 <div className="pt-3 border-t border-[#22232c] text-[10px] text-zinc-500 space-y-1">
+                  <p className="text-emerald-400 font-medium">⚡ Local Analysis: 100% Offline</p>
                   <p>AI Engine: Gemini 3.8 Flash</p>
                   <p>Environment: Google AI Studio</p>
                 </div>

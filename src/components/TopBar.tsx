@@ -11,6 +11,8 @@ import {
   MessageSquare,
   ShieldCheck,
   Check,
+  ShieldAlert,
+  WifiOff,
 } from 'lucide-react';
 import { SupportedLanguage, AiUsageData } from '../types';
 import { SUPPORTED_LANGUAGES } from '../data/languages';
@@ -22,6 +24,8 @@ interface TopBarProps {
   onExplain: () => void;
   onFix: () => void;
   onResetCode: () => void;
+  onOpenLocalSecurity?: () => void;
+  localSecurityScore?: number;
   usageData: AiUsageData | null;
   isAiLoading: boolean;
   activeAction: 'review' | 'explain' | 'fix' | 'chat' | null;
@@ -36,6 +40,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onExplain,
   onFix,
   onResetCode,
+  onOpenLocalSecurity,
+  localSecurityScore,
   usageData,
   isAiLoading,
   activeAction,
@@ -186,6 +192,21 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Wand2 className="w-3.5 h-3.5 text-emerald-400" />
           <span className="font-semibold">Fix Code</span>
         </button>
+
+        {onOpenLocalSecurity && (
+          <button
+            onClick={onOpenLocalSecurity}
+            title="Run 100% offline local security scan (Zero network traffic)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 transition-all shadow-sm cursor-pointer"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="font-semibold">Local Security</span>
+            <span className="text-[10px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono flex items-center gap-0.5">
+              <WifiOff className="w-2.5 h-2.5" />
+              <span>Offline</span>
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Right controls: AI Usage & Chat Toggle */}
